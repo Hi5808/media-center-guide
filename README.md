@@ -79,6 +79,22 @@ Example config files live in [`config-examples/`](config-examples/) and helper s
 
 ---
 
+## Everyday workflow
+
+Once it's all set up, you only ever touch **two apps**:
+
+1. **Get something** — add it in **Radarr** (movies) or **Sonarr** (TV). Tick *search on add*
+   and it downloads + organizes itself.
+2. **Watch** — open **Jellyfin** on any device; new titles appear automatically.
+
+> **Never grab from Prowlarr's Search tab** — it has no downloader attached and will say
+> *"torrent downloader not configured."* Prowlarr runs in the background feeding indexers to
+> Radarr/Sonarr; you don't search in it. See [gotchas](docs/08-gotchas.md).
+
+> **Thinking of a single Netflix-style search page (Jellyseerr)?** It does **not** work with
+> **Jellyfin 12.x** (shipped by e.g. Ubuntu 26.04) yet — see
+> [gotchas](docs/08-gotchas.md#discovery--request-layer-jellyseerr) before you try.
+
 ## Conventions / placeholders
 
 Replace these everywhere they appear. **Never commit real values to a public repo.**

@@ -55,6 +55,42 @@ chapter they belong to; this is the quick reference.
 - **YTS is movies-only** — it won't sync into Sonarr; that's expected.
 - **API add** needs `appProfileId: 1` + `enable: true`.
 
+## Discovery / request layer (Jellyseerr)
+
+- **Jellyseerr does not work with Jellyfin 12.x (yet).** Distros like **Ubuntu 26.04 ship
+  Jellyfin 12.4**, which dropped the legacy API that Jellyseerr depends on. Symptoms, in order
+  as you work around each one:
+  - Sign-in fails because Jellyfin 12 **rejects the `X-Emby-Authorization` header** (HTTP 400)
+    and accepts only the modern `Authorization: MediaBrowser ...` header. Jellyseerr still sends
+    the legacy header.
+  - If you proxy/translate that header, login succeeds but you then hit **`NO_ADMIN_USER`** —
+    Jellyseerr's admin check reads an **older user-object schema** that Jellyfin 12 changed. A
+    header proxy can't fix a response-body schema difference.
+  - Both `fallenbagel/jellyseerr:latest` **and** `:develop` fail identically as of late 2026.
+- **Options if you want the unified "one search page":**
+  1. Wait for Jellyseerr to add Jellyfin 12 support, or
+  2. Run the official **Jellyfin 10.10 LTS** (not the distro's 12.x) — the version the whole
+     *arr/requester ecosystem supports — then Jellyseerr works fully.
+- **Until then, the robust workflow is two tiles:** add titles in **Radarr** (movies) /
+  **Sonarr** (TV); watch in **Jellyfin**. No third-party handshake involved, nothing to break.
+- **Diagnosing which header your Jellyfin accepts** (useful for any Jellyfin-integration tool):
+  ```bash
+  # 200 = accepted, 400 = rejected
+  curl -s -o /dev/null -w "%{http_code}\n" -X POST http://<host>:8096/Users/AuthenticateByName \
+    -H 'Content-Type: application/json' \
+    -H 'X-Emby-Authorization: MediaBrowser Client="t", Device="t", DeviceId="t", Version="1"' \
+    -d '{"Username":"<user>","Pw":"<pass>"}'
+  ```
+
+## Don't grab from Prowlarr's Search tab
+
+Prowlarr's **Search** tab is for *testing indexers only* — it has **no download client** of its
+own unless you add one, so clicking "grab" there gives **"torrent downloader not configured."**
+Always add titles in **Radarr/Sonarr** (which have the Transmission client wired up); Prowlarr
+just feeds indexers to them in the background. (You *can* add a download client to Prowlarr —
+Settings → Download Clients — if you want its Search-tab grabs to work, but it's not the normal
+flow.)
+
 ## Firewall
 
 - Rules are bound to **`tailscale0`**. If a service is unreachable, confirm you're connecting
