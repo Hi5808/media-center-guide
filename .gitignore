@@ -1,0 +1,9 @@
+# Never commit real secrets or local overrides
+*.local
+*.secret
+secrets.env
+.env
+
+# Any real config pulled from a live box (keep only the *-examples)
+config-live/
+**/config.xml

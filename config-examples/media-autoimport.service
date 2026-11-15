@@ -1,0 +1,7 @@
+[Unit]
+Description=Nudge Sonarr/Radarr to import manually-added downloads
+After=network-online.target sonarr.service radarr.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/media-autoimport.sh

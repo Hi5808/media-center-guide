@@ -1,0 +1,12 @@
+---
+title: Media Center
+theme: dark
+color: slate
+headerStyle: boxed
+layout:
+  Media:
+    style: row
+    columns: 4
+  System:
+    style: row
+    columns: 3

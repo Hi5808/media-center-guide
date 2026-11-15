@@ -1,0 +1,27 @@
+{
+  "download-dir": "/srv/torrents",
+  "incomplete-dir": "/srv/torrents/.incomplete",
+  "incomplete-dir-enabled": true,
+  "rename-partial-files": true,
+
+  "speed-limit-up": 0,
+  "speed-limit-up-enabled": true,
+  "ratio-limit": 0,
+  "ratio-limit-enabled": true,
+  "idle-seeding-limit": 1,
+  "idle-seeding-limit-enabled": true,
+
+  "rpc-enabled": true,
+  "rpc-authentication-required": true,
+  "rpc-username": "<DL_USER>",
+  "rpc-password": "<DL_PASS>",
+  "rpc-bind-address": "0.0.0.0",
+  "rpc-port": 9091,
+  "rpc-whitelist-enabled": true,
+  "rpc-whitelist": "127.0.0.1,192.168.1.*",
+  "rpc-host-whitelist-enabled": false,
+
+  "peer-port": 51413,
+  "umask": 2,
+  "utp-enabled": true
+}
