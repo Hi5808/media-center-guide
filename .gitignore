@@ -3,6 +3,8 @@
 *.secret
 secrets.env
 .env
+docker-compose/.env
+docker-compose/config/
 
 # Any real config pulled from a live box (keep only the *-examples)
 config-live/

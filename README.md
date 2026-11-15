@@ -30,6 +30,8 @@ dashboard** for everything.
                                 └──────────────────┘
 ```
 
+![Pipeline](docs/img/pipeline.svg)
+
 **What you get**
 
 - Add a title in Sonarr/Radarr → it searches your indexers (via Prowlarr) → grabs the best
@@ -58,6 +60,19 @@ dashboard** for everything.
 7. [Auto-import timer](docs/06-autoimport.md)
 8. [Homepage (dashboard)](docs/07-homepage.md)
 9. [Gotchas & troubleshooting](docs/08-gotchas.md)
+10. [Docker Compose variant (SBC / RK3588)](docs/09-docker-compose.md)
+
+![Dashboard](docs/img/dashboard.svg)
+
+*The Homepage dashboard — one pane for every service (illustrative mockup, no real data).*
+
+## Two ways to deploy
+
+- **Bare metal** — follow chapters 1–8 (systemd services, native installs). Best if you want
+  each service managed by the OS directly.
+- **Docker Compose** — [chapter 10](docs/09-docker-compose.md) + [`docker-compose/`](docker-compose/).
+  One `docker compose up -d`; multi-arch images run as-is on **arm64 SBCs** (Raspberry Pi,
+  Rock 5B / RK3588, Orange Pi 5, …). Includes optional Rockchip hardware-transcode notes.
 
 Example config files live in [`config-examples/`](config-examples/) and helper scripts in
 [`scripts/`](scripts/). **Every secret is a placeholder** — see below.

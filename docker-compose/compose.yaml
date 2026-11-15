@@ -1,0 +1,131 @@
+# Self-hosted media center — Docker Compose variant
+# ---------------------------------------------------
+# Same stack as the bare-metal guide, but containerized. Ideal for SBCs
+# (Raspberry Pi, Rock 5B / RK3588, Orange Pi, etc.) — every image below is
+# multi-arch (linux/amd64 + linux/arm64), so this runs as-is on arm64.
+#
+#   1. cp .env.example .env   &&   edit .env
+#   2. docker compose up -d
+#   3. grab API keys from each UI, paste into homepage config, then:
+#      docker compose restart homepage
+#
+# Design choices mirror the bare-metal guide:
+#   * One PUID/PGID for every *arr + the downloader  -> hardlinks work, no perm juggling.
+#   * /data is ONE mount holding torrents + media     -> instant hardlinks (not copies).
+#       /data/torrents   (staging)
+#       /data/media/tv   /data/media/movies
+#   * Bind everything to Tailscale only via the firewall (see docs/01-tailscale.md);
+#     here we publish on 127.0.0.1 by default so nothing is exposed until you choose.
+#
+# NOTE: run `tailscale up` on the HOST (not in a container) and apply the
+# tailscale0-only UFW rules from docs/01-tailscale.md. Then reach the UIs at
+# http://<TAILSCALE_IP>:<port> — change the published host IP below if you want
+# them bound to the tailnet interface directly.
+
+name: media-center
+
+x-common: &common
+  restart: unless-stopped
+  environment:
+    PUID: ${PUID}
+    PGID: ${PGID}
+    TZ: ${TZ}
+
+services:
+  transmission:
+    <<: *common
+    image: lscr.io/linuxserver/transmission:4.0.6
+    container_name: transmission
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+      USER: ${DL_USER}
+      PASS: ${DL_PASS}
+    volumes:
+      - ${CONFIG_ROOT}/transmission:/config
+      - ${DATA_ROOT}/torrents:/data/torrents
+    ports:
+      - "${BIND_IP}:9091:9091"     # web UI
+      - "51413:51413"              # peer port (tcp)
+      - "51413:51413/udp"
+    # Download-only (no seeding) is enforced in the settings template:
+    # config-examples/transmission-settings.json — copy it into
+    # ${CONFIG_ROOT}/transmission/settings.json BEFORE first start, or set
+    # ratio-limit=0 / speed-limit-up=0 in the UI afterwards.
+
+  jellyfin:
+    <<: *common
+    image: lscr.io/linuxserver/jellyfin:10.9.11
+    container_name: jellyfin
+    volumes:
+      - ${CONFIG_ROOT}/jellyfin:/config
+      - ${DATA_ROOT}/media:/data/media
+    ports:
+      - "${BIND_IP}:8096:8096"
+    # For RK3588 / Mali / Rockchip hardware transcoding you must map the GPU/VPU
+    # devices and set the right codec in Jellyfin. See docs/09-docker-compose.md
+    # (the devices block is commented in .env.example). Software transcode works
+    # everywhere without it.
+    # devices:
+    #   - /dev/dri:/dev/dri          # VA-API / RKMPP render node (Rockchip, Intel, AMD)
+
+  sonarr:
+    <<: *common
+    image: lscr.io/linuxserver/sonarr:4.0.9
+    container_name: sonarr
+    volumes:
+      - ${CONFIG_ROOT}/sonarr:/config
+      - ${DATA_ROOT}:/data              # sees BOTH /data/torrents and /data/media -> hardlinks
+    ports:
+      - "${BIND_IP}:8989:8989"
+    depends_on:
+      - transmission
+
+  radarr:
+    <<: *common
+    image: lscr.io/linuxserver/radarr:5.9.1
+    container_name: radarr
+    volumes:
+      - ${CONFIG_ROOT}/radarr:/config
+      - ${DATA_ROOT}:/data
+    ports:
+      - "${BIND_IP}:7878:7878"
+    depends_on:
+      - transmission
+
+  prowlarr:
+    <<: *common
+    image: lscr.io/linuxserver/prowlarr:1.21.2
+    container_name: prowlarr
+    volumes:
+      - ${CONFIG_ROOT}/prowlarr:/config
+    ports:
+      - "${BIND_IP}:9696:9696"
+
+  # Optional: solves Cloudflare-protected indexers (1337x, EZTV). Multi-arch.
+  flaresolverr:
+    <<: *common
+    image: ghcr.io/flaresolverr/flaresolverr:v3.3.21
+    container_name: flaresolverr
+    environment:
+      LOG_LEVEL: info
+      TZ: ${TZ}
+    ports:
+      - "${BIND_IP}:8191:8191"
+    profiles: ["extras"]              # only starts with:  docker compose --profile extras up -d
+
+  homepage:
+    <<: *common
+    image: ghcr.io/gethomepage/homepage:v0.9.13
+    container_name: homepage
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+      HOMEPAGE_ALLOWED_HOSTS: ${HOMEPAGE_ALLOWED_HOSTS}
+    volumes:
+      - ${CONFIG_ROOT}/homepage:/app/config
+      - ${DATA_ROOT}:/data:ro          # for the disk-usage widgets
+    ports:
+      - "${BIND_IP}:7575:3000"
