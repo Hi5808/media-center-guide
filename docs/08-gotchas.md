@@ -55,6 +55,16 @@ chapter they belong to; this is the quick reference.
 - **YTS is movies-only** — it won't sync into Sonarr; that's expected.
 - **API add** needs `appProfileId: 1` + `enable: true`.
 
+## Homepage: Transmission tile shows nothing / errors
+
+- **Use `127.0.0.1`, not `localhost`, in the Transmission widget `url`.** Transmission binds
+  **IPv4 only**, but Node (Homepage) resolves `localhost` to `::1` (IPv6) first, so the widget
+  silently fails to connect while every other tile works (those services listen on both
+  stacks). Same root cause as the `transmission-remote` CLI gotcha above.
+- The RPC itself is easy to verify from the host: `transmission-remote 127.0.0.1:9091 -n
+  <user>:<pass> -st` should print session stats. If that works but the tile doesn't, it's the
+  `localhost`/IPv6 issue, not auth.
+
 ## Discovery / request layer (Jellyseerr)
 
 - **Jellyseerr does not work with Jellyfin 12.x (yet).** Distros like **Ubuntu 26.04 ship

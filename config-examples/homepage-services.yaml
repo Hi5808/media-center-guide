@@ -54,6 +54,8 @@
         description: Download client (download-only)
         widget:
           type: transmission
-          url: http://localhost:9091
+          # Use 127.0.0.1, NOT localhost: Transmission binds IPv4 only, but Node
+          # resolves localhost to ::1 (IPv6) first, so the widget can't connect.
+          url: http://127.0.0.1:9091
           username: <DL_USER>
           password: <DL_PASS>
