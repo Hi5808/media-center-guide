@@ -45,8 +45,38 @@ curl -X POST "http://<TAILSCALE_IP>:9696/api/v1/command" \
 - **Knaben** (aggregator)
 
 > **Cloudflare-blocked** indexers (e.g. **1337x**, **EZTV**) need a
-> [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) proxy configured under
-> **Settings → Indexer Proxies**. Optional; skip if the above cover you.
+> [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) proxy — see below. Worth adding:
+> they're often far better-seeded than the no-proxy indexers, which matters a lot for obscure
+> or older titles where the others only return dead torrents.
+
+### FlareSolverr (unlock 1337x, EZTV, and other Cloudflare indexers)
+
+FlareSolverr solves the Cloudflare challenge so Prowlarr can query those indexers. Run it as a
+container:
+
+```bash
+docker run -d --name flaresolverr --restart unless-stopped \
+  -e LOG_LEVEL=info -e TZ=<your/tz> \
+  -p 8191:8191 \
+  ghcr.io/flaresolverr/flaresolverr:latest
+```
+
+Then wire it into Prowlarr:
+
+1. **Settings → Indexer Proxies → + → FlareSolverr.** Host `http://localhost:8191` (or
+   `http://127.0.0.1:8191`). Give it a **tag**, e.g. `flaresolverr`. Save.
+2. **Add the indexer** (1337x, EZTV, …) as usual, and put the **same `flaresolverr` tag** on it.
+   Prowlarr routes only tagged indexers through the proxy. **Test** — it should pass now.
+3. Prowlarr auto-syncs them to Sonarr/Radarr. Force it if impatient:
+   `POST /api/v1/command {"name":"ApplicationIndexerSync"}`.
+
+> FlareSolverr adds latency (each query solves a challenge), so searches through these indexers
+> are slower — fine for the much better seeded results. If a search seems to hang, give it
+> 20–40 s.
+>
+> **Payoff:** on a poorly-seeded title where the no-proxy indexers returned only dead torrents,
+> adding EZTV/1337x can jump a search from ~45 results to ~100 with live 720p copies (21+
+> seeders), turning a stuck download into a working one.
 
 ### API shape (if scripting)
 
