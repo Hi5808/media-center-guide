@@ -64,6 +64,13 @@ chapter they belong to; this is the quick reference.
 - The RPC itself is easy to verify from the host: `transmission-remote 127.0.0.1:9091 -n
   <user>:<pass> -st` should print session stats. If that works but the tile doesn't, it's the
   `localhost`/IPv6 issue, not auth.
+- **Clicking the tile 403s (opens the Transmission web UI over Tailscale):** the widget reads
+  fine from `127.0.0.1`, but opening the web UI in your browser comes from your **Tailscale IP
+  (`100.x`)**, which Transmission's `rpc-whitelist` rejects (`403`). Add the Tailscale CGNAT
+  range to the whitelist in `settings.json` (stop the daemon first):
+  `"rpc-whitelist": "127.0.0.1,192.168.1.*,100.*"`. UFW still limits the port to `tailscale0`,
+  so this stays private. Same applies to Sonarr/Radarr/Prowlarr only if you enabled their
+  built-in IP filtering — by default they don't use one.
 
 ## Discovery / request layer (Jellyseerr)
 
