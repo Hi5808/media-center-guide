@@ -72,11 +72,26 @@ chapter they belong to; this is the quick reference.
   so this stays private. Same applies to Sonarr/Radarr/Prowlarr only if you enabled their
   built-in IP filtering — by default they don't use one.
 
-## Discovery / request layer (Jellyseerr)
+## Discovery / request layer (Seerr, formerly Jellyseerr)
 
-- **Jellyseerr does not work with Jellyfin 12.x (yet).** Distros like **Ubuntu 26.04 ship
-  Jellyfin 12.4**, which dropped the legacy API that Jellyseerr depends on. Symptoms, in order
-  as you work around each one:
+- **The project was renamed.** `fallenbagel/jellyseerr` is now **`seerr-team/seerr`** ("Seerr").
+  Pull from **`ghcr.io/seerr-team/seerr`** and note the tags carry a `v` prefix
+  (`v3.5.2`, not `3.5.2`). The old Docker Hub image `fallenbagel/jellyseerr` stops at **2.7.3**
+  and publishes a literal `2.7.3-deprecated` tag — anything still pinned there is on an
+  abandoned image.
+
+- **Measured on Jellyfin 12.4.0** (2026-11-17), straight against `/Users/AuthenticateByName`:
+  the legacy `X-Emby-Authorization` header returns **HTTP 400** ("Error processing request."),
+  while the modern `Authorization: MediaBrowser ...` header returns **200** and a user object
+  carrying `Policy.IsAdministrator` in the usual place. So the server side is fine for a client
+  that sends the modern header; what matters is which one your requester version sends.
+  Seerr **v3.5.0** (28 Sep 2026) includes *"(jellyfin-api) Update Authorization headers for
+  Jellyfin (#3502)"*, which is the relevant fix — but no release note claims Jellyfin 12
+  support, so verify against your own server before relying on it.
+
+- **The original breakage (Jellyseerr 2.x on Jellyfin 12.x).** Distros like **Ubuntu 26.04 ship
+  Jellyfin 12.4**, which dropped the legacy API that Jellyseerr 2.x depends on. Symptoms, in
+  order as you work around each one:
   - Sign-in fails because Jellyfin 12 **rejects the `X-Emby-Authorization` header** (HTTP 400)
     and accepts only the modern `Authorization: MediaBrowser ...` header. Jellyseerr still sends
     the legacy header.

@@ -91,9 +91,11 @@ Once it's all set up, you only ever touch **two apps**:
 > *"torrent downloader not configured."* Prowlarr runs in the background feeding indexers to
 > Radarr/Sonarr; you don't search in it. See [gotchas](docs/08-gotchas.md).
 
-> **Thinking of a single Netflix-style search page (Jellyseerr)?** It does **not** work with
-> **Jellyfin 12.x** (shipped by e.g. Ubuntu 26.04) yet — see
-> [gotchas](docs/08-gotchas.md#discovery--request-layer-jellyseerr) before you try.
+> **Thinking of a single Netflix-style search page (Seerr, formerly Jellyseerr)?** Jellyseerr
+> 2.x does **not** work with **Jellyfin 12.x** (shipped by e.g. Ubuntu 26.04); Seerr 3.5+ ships
+> the auth-header fix but doesn't claim Jellyfin 12 support — see
+> [gotchas](docs/08-gotchas.md#discovery--request-layer-seerr-formerly-jellyseerr) before you
+> try. Jellyfin itself cannot search or download; that always lives in Sonarr/Radarr.
 
 ## Conventions / placeholders
 
