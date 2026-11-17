@@ -114,6 +114,24 @@ flow.)
   over Tailscale (to `<TAILSCALE_IP>`), not the LAN IP, and that `ufw status` shows the rule on
   `tailscale0`.
 
+- **A stray LAN rule is how services quietly become public-ish.** `ufw status verbose` lists
+  each rule's source; anything reading `<port> ALLOW IN <LAN_SUBNET>` is reachable by every
+  device on your Wi-Fi, which matters a lot once you've turned the \*arr logins off. Drop one
+  with:
+
+  ```bash
+  sudo ufw delete allow from <LAN_SUBNET> to any port 9091 proto tcp
+  ```
+
+  The rule must be deleted in the **same form it was added** — if it was created without
+  `proto tcp`, the delete needs to omit it too, or UFW answers `Could not delete non-existent
+  rule`. When in doubt, `sudo ufw status numbered` then `sudo ufw delete <n>`.
+
+- **Loopback is never filtered**, so tightening these rules doesn't break service-to-service
+  calls. After closing 9091 to the LAN, Transmission's RPC still answers locally — a `409`
+  from `curl http://127.0.0.1:9091/transmission/rpc` is the *healthy* response (it means
+  "missing session id"), not a failure.
+
 ## Useful checks
 
 ```bash

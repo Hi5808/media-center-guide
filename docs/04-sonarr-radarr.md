@@ -89,3 +89,47 @@ POST /api/v3/command
 ```
 
 (`importMode: Copy` becomes a hardlink when source and dest share a filesystem.)
+
+## Optional: skip the login prompts on a tailnet-only box
+
+Sonarr/Radarr/Prowlarr default to `Forms` auth, so every service is a separate sign-in — four
+logins to cross one dashboard. If the firewall already limits these ports to `tailscale0`
+(chapter 1), the tailnet *is* the authentication boundary and the forms are redundant. Each app
+exposes `External`, which hands auth off to the network/reverse proxy in front of it:
+
+```bash
+for a in sonarr radarr prowlarr; do
+  f=/var/lib/$a/config.xml
+  sudo cp "$f" "$f.bak-noauth"      # keep a way back
+  sudo sed -i 's#<AuthenticationMethod>.*</AuthenticationMethod>#<AuthenticationMethod>External</AuthenticationMethod>#' "$f"
+  sudo systemctl restart $a
+done
+```
+
+Verify the UI answers directly instead of redirecting to `/login`:
+
+```bash
+for p in 8989 7878 9696; do
+  curl -s -o /dev/null -w "$p -> %{http_code}\n" -L http://127.0.0.1:$p/
+done                                  # expect 200, 200, 200
+```
+
+> **Only do this if the ports are genuinely not on the LAN.** Check with
+> `sudo ufw status verbose` — if a rule reads `8989 ALLOW IN <LAN_SUBNET>` rather than
+> `Anywhere on tailscale0`, anyone on your Wi-Fi gets an unauthenticated Sonarr. Restore a
+> login with the `.bak-noauth` copy.
+
+### Don't "fix" this by changing `BindAddress`
+
+It's tempting to narrow `<BindAddress>` from `*` to loopback + `<TAILSCALE_IP>` instead of
+using the firewall. The field takes **one** address, not a list — and whichever single value you
+pick breaks something: loopback kills tailnet access, and the Tailscale IP kills the
+`127.0.0.1` calls that Homepage's widgets and the Sonarr↔Prowlarr/Transmission wiring all use.
+Leave `BindAddress` at `*` and let UFW do the filtering.
+
+## Jellyfin is the exception
+
+Jellyfin has no equivalent switch — it always authenticates against its own user database. The
+closest you get is clearing a user's password (Dashboard → Users), which turns the login screen
+into a one-click avatar pick. That is a real reduction in security for that account, so it's a
+deliberate choice, not a default to copy.

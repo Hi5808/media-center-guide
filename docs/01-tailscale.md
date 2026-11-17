@@ -37,9 +37,11 @@ sudo ufw enable
 sudo ufw status verbose
 ```
 
-> **Transmission on the LAN (optional):** if you also want the Transmission web UI from LAN
-> machines (not just the tailnet), replace its rule with
-> `sudo ufw allow from <LAN_SUBNET> to any port 9091 proto tcp`. Otherwise keep it on
-> `tailscale0` like the rest.
+> **Transmission on the LAN (not recommended):** you *can* reach the Transmission web UI from
+> LAN machines by replacing its rule with
+> `sudo ufw allow from <LAN_SUBNET> to any port 9091 proto tcp`. Keep it on `tailscale0` like
+> the rest unless you specifically need that — Transmission's RPC is often left
+> unauthenticated behind the whitelist, so a LAN rule hands every device on your Wi-Fi an open
+> download client.
 
 From here on, every UI is at `http://<TAILSCALE_IP>:<port>`.
