@@ -61,6 +61,7 @@ dashboard** for everything.
 8. [Homepage (dashboard)](docs/07-homepage.md)
 9. [Gotchas & troubleshooting](docs/08-gotchas.md)
 10. [Docker Compose variant (SBC / RK3588)](docs/09-docker-compose.md)
+11. [Mobile Linux: phones & tablets](docs/10-mobile-linux.md)
 
 ![Dashboard](docs/img/dashboard.svg)
 
@@ -73,6 +74,9 @@ dashboard** for everything.
 - **Docker Compose** — [chapter 10](docs/09-docker-compose.md) + [`docker-compose/`](docker-compose/).
   One `docker compose up -d`; multi-arch images run as-is on **arm64 SBCs** (Raspberry Pi,
   Rock 5B / RK3588, Orange Pi 5, …). Includes optional Rockchip hardware-transcode notes.
+- **Phone or tablet** — [chapter 11](docs/10-mobile-linux.md). Run the stack on an arm64 Linux
+  (or Android + Termux) device on battery-friendly settings, with an external SSD for storage.
+  Run `bash scripts/check-mobile-host.sh` first to check the device.
 
 Example config files live in [`config-examples/`](config-examples/) and helper scripts in
 [`scripts/`](scripts/). **Every secret is a placeholder** — see below.
