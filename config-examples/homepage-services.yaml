@@ -1,5 +1,17 @@
 ---
 - Media:
+    # Seerr is the front door: one search box for movies + TV, routed to
+    # Radarr/Sonarr. Widget type is still `jellyseerr` despite the rename.
+    # Generate the key in Seerr -> Settings -> General -> API Key.
+    - Seerr:
+        icon: jellyseerr.png
+        href: http://<TAILSCALE_IP>:5055
+        description: Search & request
+        widget:
+          type: jellyseerr
+          url: http://127.0.0.1:5055
+          key: <SEERR_API_KEY>
+
     - Jellyfin:
         icon: jellyfin.png
         href: http://<TAILSCALE_IP>:8096

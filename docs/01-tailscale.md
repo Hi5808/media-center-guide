@@ -31,6 +31,7 @@ sudo ufw allow in on tailscale0 to any port 8989 proto tcp   # Sonarr
 sudo ufw allow in on tailscale0 to any port 7878 proto tcp   # Radarr
 sudo ufw allow in on tailscale0 to any port 9696 proto tcp   # Prowlarr
 sudo ufw allow in on tailscale0 to any port 7575 proto tcp   # Homepage dashboard
+sudo ufw allow in on tailscale0 to any port 5055 proto tcp   # Seerr (optional)
 sudo ufw allow in on tailscale0 to any port 9091 proto tcp   # Transmission (optional; see note)
 sudo ufw allow OpenSSH
 sudo ufw enable

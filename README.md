@@ -112,6 +112,7 @@ Replace these everywhere they appear. **Never commit real values to a public rep
 | `<RADARR_API_KEY>`   | From Radarr → Settings → General                         |
 | `<PROWLARR_API_KEY>` | From Prowlarr → Settings → General                       |
 | `<JELLYFIN_API_KEY>` | From Jellyfin → Dashboard → API Keys                     |
+| `<SEERR_API_KEY>`    | From Seerr → Settings → General                         |
 
 Paths used throughout:
 
