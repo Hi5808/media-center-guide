@@ -129,7 +129,8 @@ Leave `BindAddress` at `*` and let UFW do the filtering.
 
 ## Jellyfin is the exception
 
-Jellyfin has no equivalent switch — it always authenticates against its own user database. The
-closest you get is clearing a user's password (Dashboard → Users), which turns the login screen
-into a one-click avatar pick. That is a real reduction in security for that account, so it's a
-deliberate choice, not a default to copy.
+Jellyfin has no equivalent switch — it always authenticates against its own user database, with
+no mode that defers to the network. The closest you get is giving your watching user a blank
+password so the login screen becomes a one-click avatar pick, which is a deliberate trade rather
+than a default to copy: see
+[Optional: one-click sign-in on a tailnet-only box](03-jellyfin.md#optional-one-click-sign-in-on-a-tailnet-only-box).
