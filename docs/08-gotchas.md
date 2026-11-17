@@ -129,6 +129,29 @@ curl -X POST http://127.0.0.1:5055/api/v1/auth/jellyfin \
 > sign-in response, in `/Users` and in `/Users/Me` — so if all three say `true`, the problem is
 > on the Seerr request side, not the server.
 
+### If you set up by API, finish with `/initialize`
+
+Creating the admin user and adding Radarr/Sonarr over the API is **not** the whole setup. The
+web wizard calls one more endpoint on its final step, and without it `settings.public.initialized`
+stays false, so Seerr 307-redirects **every** route to `/setup`:
+
+```
+GET /         -> 307  Location: /setup
+GET /login    -> 307  Location: /setup
+GET /discover -> 307  Location: /setup
+```
+
+Open it in a browser in that state and you land back in the setup wizard, which then errors
+because the admin user and services it wants to create already exist. The fix is one call:
+
+```bash
+curl -X POST http://127.0.0.1:5055/api/v1/settings/initialize -b <cookiejar>
+# -> {"initialized":true}    and / now redirects to /login as it should
+```
+
+Confirm with `curl -s -o /dev/null -D - http://<host>:5055/ | grep -i location` — you want
+`/login`, not `/setup`.
+
 ### Jellyfin auth headers, if you're debugging any integration
 
 Measured on **Jellyfin 12.4.0**, against `/Users/AuthenticateByName`:
