@@ -115,6 +115,25 @@ services:
       - "${BIND_IP}:8191:8191"
     profiles: ["extras"]              # only starts with:  docker compose --profile extras up -d
 
+  # Single search/request page feeding Radarr + Sonarr. Optional: the rest of the
+  # stack works without it, and you still use the *arr UIs for maintenance.
+  # Tested working against Jellyfin 12.4.0 (see docs/08-gotchas.md) -- note the
+  # project was renamed from fallenbagel/jellyseerr to seerr-team/seerr.
+  seerr:
+    <<: *common
+    image: ghcr.io/seerr-team/seerr:v3.5.2
+    container_name: seerr
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+      LOG_LEVEL: info
+    volumes:
+      - ${CONFIG_ROOT}/seerr:/app/config
+    ports:
+      - "${BIND_IP}:5055:5055"
+    profiles: ["extras"]              # only starts with:  docker compose --profile extras up -d
+
   homepage:
     <<: *common
     image: ghcr.io/gethomepage/homepage:v0.9.13

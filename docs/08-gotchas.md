@@ -74,45 +74,87 @@ chapter they belong to; this is the quick reference.
 
 ## Discovery / request layer (Seerr, formerly Jellyseerr)
 
+This is the piece that gives you **one search page** instead of switching between Radarr (movies)
+and Sonarr (TV): you search, click request, and Seerr hands it to the right \*arr. Jellyfin itself
+can never do this — it has no indexer search and no download client, and no plugin adds them.
+
 - **The project was renamed.** `fallenbagel/jellyseerr` is now **`seerr-team/seerr`** ("Seerr").
   Pull from **`ghcr.io/seerr-team/seerr`** and note the tags carry a `v` prefix
-  (`v3.5.2`, not `3.5.2`). The old Docker Hub image `fallenbagel/jellyseerr` stops at **2.7.3**
-  and publishes a literal `2.7.3-deprecated` tag — anything still pinned there is on an
-  abandoned image.
+  (`v3.5.2`, not `3.5.2` — the unprefixed form fails with `not found` on pull). The old Docker
+  Hub image `fallenbagel/jellyseerr` stops at **2.7.3** and publishes a literal
+  `2.7.3-deprecated` tag, so anything still pinned there is on an abandoned image.
 
-- **Measured on Jellyfin 12.4.0** (2026-11-17), straight against `/Users/AuthenticateByName`:
-  the legacy `X-Emby-Authorization` header returns **HTTP 400** ("Error processing request."),
-  while the modern `Authorization: MediaBrowser ...` header returns **200** and a user object
-  carrying `Policy.IsAdministrator` in the usual place. So the server side is fine for a client
-  that sends the modern header; what matters is which one your requester version sends.
-  Seerr **v3.5.0** (28 Sep 2026) includes *"(jellyfin-api) Update Authorization headers for
-  Jellyfin (#3502)"*, which is the relevant fix — but no release note claims Jellyfin 12
-  support, so verify against your own server before relying on it.
+- **Seerr 3.5.2 works with Jellyfin 12.4.0.** Verified 2026-11-17: sign-in returns 200, the
+  initial admin user is created, and the server is registered. Older Jellyseerr 2.x genuinely
+  did not work with Jellyfin 12.x — if you are on 2.x, upgrade rather than downgrading
+  Jellyfin. The fix landed in **v3.5.0** (28 Sep 2026) as
+  *"(jellyfin-api) Update Authorization headers for Jellyfin (#3502)"*.
 
-- **The original breakage (Jellyseerr 2.x on Jellyfin 12.x).** Distros like **Ubuntu 26.04 ship
-  Jellyfin 12.4**, which dropped the legacy API that Jellyseerr 2.x depends on. Symptoms, in
-  order as you work around each one:
-  - Sign-in fails because Jellyfin 12 **rejects the `X-Emby-Authorization` header** (HTTP 400)
-    and accepts only the modern `Authorization: MediaBrowser ...` header. Jellyseerr still sends
-    the legacy header.
-  - If you proxy/translate that header, login succeeds but you then hit **`NO_ADMIN_USER`** —
-    Jellyseerr's admin check reads an **older user-object schema** that Jellyfin 12 changed. A
-    header proxy can't fix a response-body schema difference.
-  - Both `fallenbagel/jellyseerr:latest` **and** `:develop` fail identically as of late 2026.
-- **Options if you want the unified "one search page":**
-  1. Wait for Jellyseerr to add Jellyfin 12 support, or
-  2. Run the official **Jellyfin 10.10 LTS** (not the distro's 12.x) — the version the whole
-     *arr/requester ecosystem supports — then Jellyseerr works fully.
-- **Until then, the robust workflow is two tiles:** add titles in **Radarr** (movies) /
-  **Sonarr** (TV); watch in **Jellyfin**. No third-party handshake involved, nothing to break.
-- **Diagnosing which header your Jellyfin accepts** (useful for any Jellyfin-integration tool):
-  ```bash
-  # 200 = accepted, 400 = rejected
-  curl -s -o /dev/null -w "%{http_code}\n" -X POST http://<host>:8096/Users/AuthenticateByName \
-    -H 'Content-Type: application/json' \
-    -H 'X-Emby-Authorization: MediaBrowser Client="t", Device="t", DeviceId="t", Version="1"' \
-    -d '{"Username":"<user>","Pw":"<pass>"}'
-  ```
+### The `NO_ADMIN_USER` trap (it is not about admin permissions)
+
+If you set Seerr up by API rather than the web wizard, **`serverType` is required** in the
+sign-in body. Omit it and you get `HTTP 500 {"message":"NO_ADMIN_USER"}` plus this log line:
+
+```
+[warn][Auth]: Failed sign-in attempt from user without admin permissions and no admin user exists
+```
+
+Both the error code and that message strongly suggest a permissions problem. It isn't one. In
+`server/routes/auth.ts` the admin check and the server-type check are separate, and they report
+**different** codes — `NOT_ADMIN` vs `NO_ADMIN_USER`:
+
+```ts
+if (account.User.Policy.IsAdministrator === false) {
+  throw new ApiError(403, ApiErrorCode.NotAdmin);      // real permissions failure
+}
+if (body.serverType !== MediaServerType.JELLYFIN &&
+    body.serverType !== MediaServerType.EMBY) {
+  throw new ApiError(500, ApiErrorCode.NoAdminUser);   // just a missing field
+}
+```
+
+`MediaServerType` is `PLEX = 1, JELLYFIN = 2, EMBY = 3`, so a working setup POST is:
+
+```bash
+curl -X POST http://127.0.0.1:5055/api/v1/auth/jellyfin \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"<JF_ADMIN>","password":"<JF_PASS>","hostname":"127.0.0.1",
+       "port":8096,"useSsl":false,"urlBase":"","serverType":2}'
+```
+
+> If you hit `NO_ADMIN_USER`, **check your request body before you suspect your Jellyfin user**.
+> Confirm the account really is an admin with
+> `curl -s $JF/Users -H 'Authorization: MediaBrowser Token="<token>"'` and look for
+> `Policy.IsAdministrator: true`. On Jellyfin 12.4 that flag is present and correct in the
+> sign-in response, in `/Users` and in `/Users/Me` — so if all three say `true`, the problem is
+> on the Seerr request side, not the server.
+
+### Jellyfin auth headers, if you're debugging any integration
+
+Measured on **Jellyfin 12.4.0**, against `/Users/AuthenticateByName`:
+
+| Header form | Result |
+|-------------|--------|
+| `X-Emby-Authorization: MediaBrowser ...` (legacy) | **400** "Error processing request." |
+| `Authorization: MediaBrowser ...` (modern)        | **200** + user object with `Policy` |
+
+```bash
+# 200 = accepted, 400 = rejected
+curl -s -o /dev/null -w "%{http_code}\n" -X POST http://<host>:8096/Users/AuthenticateByName \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: MediaBrowser Client="t", Device="t", DeviceId="t", Version="1"' \
+  -d '{"Username":"<user>","Pw":"<pass>"}'
+```
+
+Any tool still sending the legacy header will fail at sign-in on 12.x and needs updating.
+
+### Housekeeping
+
+- Seerr **mints a Jellyfin API key** during setup. If you tear a test install down, delete the
+  orphaned key in **Jellyfin → Dashboard → API Keys**.
+- A container run without a config volume loses its setup on removal — fine for a test, not for
+  a real install. See the `seerr` service in
+  [`docker-compose/compose.yaml`](../docker-compose/compose.yaml).
 
 ## Don't grab from Prowlarr's Search tab
 

@@ -63,7 +63,12 @@ curl -X POST "http://<TAILSCALE_IP>:8096/Library/VirtualFolders?name=Shows&colle
 
 ## Optional: one-click sign-in on a tailnet-only box
 
-Unlike Sonarr/Radarr/Prowlarr, Jellyfin has **no switch to turn authentication off** — it always
+Jellyfin is a **player**: it reads `/srv/media` and nothing else. It cannot search indexers or
+download anything, and no plugin adds that — searching and grabbing live in Sonarr/Radarr, with
+[Seerr](08-gotchas.md#discovery--request-layer-seerr-formerly-jellyseerr) on top if you want one
+search box instead of two tiles.
+
+Unlike Sonarr/Radarr/Prowlarr, Jellyfin also has **no switch to turn authentication off** — it always
 checks its own user database, and there is no `External`/reverse-proxy mode to hand that job to
 the network. So on a box where the tailnet is already the security boundary
 ([chapter 1](01-tailscale.md)), Jellyfin stays the one service that still asks.
