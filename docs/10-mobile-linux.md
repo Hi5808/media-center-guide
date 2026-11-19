@@ -83,6 +83,23 @@ state. It changes nothing.
 
 ---
 
+## Automated install
+
+The installers in [`scripts/mobile/`](../scripts/mobile/) do the steps above:
+
+| Device | Run | What it does |
+|---|---|---|
+| **Linux phone or tablet** (Path A) | `sudo bash scripts/mobile/install-native.sh` | Installs Transmission from your package manager, creates a `media` user and the `/srv/data` tree, extracts the app tarballs, and registers services with systemd, OpenRC, or runit. Under systemd it also installs the watchdog timer. |
+| **Android phone or tablet** (Path B) | `bash scripts/mobile/termux-setup.sh` (inside Termux) | Installs a Debian userland with `proot-distro`, installs the stack into it, and sets up Termux:Boot. `termux-start.sh` runs the services and the watchdog, since proot has no init system. |
+
+**Download URLs are not built in.** Each app's arm64 tarball URL must be set from its release
+page, as `JELLYFIN_URL`, `SONARR_URL`, `RADARR_URL`, and `PROWLARR_URL`. An app without a URL is
+skipped with a message. Set `DRY_RUN=1` to see every action first.
+
+Test the scripts without a device: `bash scripts/mobile/tests/test-mobile-layer.sh` and
+`bash scripts/mobile/tests/test-installers.sh`. These check the generated service files and the
+Termux supervisor logic. They do not check that the apps run on a real device.
+
 ## Storage on an external SSD
 
 A phone's internal storage is too small for a library and a microSD card is too slow and fragile.
